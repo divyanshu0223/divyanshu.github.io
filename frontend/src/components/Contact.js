@@ -68,16 +68,23 @@ const Contact = ({ darkMode }) => {
     setSubmitStatus(null);
 
     try {
-      // For now, we'll just simulate a successful submission
-      // In a real implementation, you would send this to your backend
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      
-      setSubmitStatus({ 
-        type: 'success', 
-        message: 'Thank you for your message! I\'ll get back to you soon.' 
+      // Submit to backend API
+      const response = await axios.post(`${API}/contact`, {
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message
       });
-      setFormData({ name: '', email: '', subject: '', message: '' });
+      
+      if (response.data) {
+        setSubmitStatus({ 
+          type: 'success', 
+          message: 'Thank you for your message! I\'ll get back to you soon.' 
+        });
+        setFormData({ name: '', email: '', subject: '', message: '' });
+      }
     } catch (error) {
+      console.error('Error submitting contact form:', error);
       setSubmitStatus({ 
         type: 'error', 
         message: 'Sorry, something went wrong. Please try again later.' 
