@@ -67,6 +67,38 @@ async def get_status_checks():
     status_checks = await db.status_checks.find().to_list(1000)
     return [StatusCheck(**status_check) for status_check in status_checks]
 
+# Contact Form Endpoints
+@api_router.post("/contact", response_model=ContactMessage)
+async def submit_contact_form(contact_data: ContactMessageCreate):
+    """Submit a contact form message"""
+    contact_dict = contact_data.dict()
+    contact_obj = ContactMessage(**contact_dict)
+    
+    # Save to database
+    await db.contact_messages.insert_one(contact_obj.dict())
+    
+    # Log the message for debugging
+    logger.info(f"New contact message from {contact_obj.name} ({contact_obj.email}): {contact_obj.subject}")
+    
+    return contact_obj
+
+@api_router.get("/contact", response_model=List[ContactMessage])
+async def get_contact_messages():
+    """Get all contact messages (admin endpoint)"""
+    messages = await db.contact_messages.find().sort("timestamp", -1).to_list(1000)
+    return [ContactMessage(**message) for message in messages]
+
+@api_router.patch("/contact/{message_id}/status")
+async def update_message_status(message_id: str, status: str):
+    """Update the status of a contact message"""
+    result = await db.contact_messages.update_one(
+        {"id": message_id},
+        {"$set": {"status": status}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Message not found")
+    return {"message": "Status updated successfully"}
+
 # Include the router in the main app
 app.include_router(api_router)
 
